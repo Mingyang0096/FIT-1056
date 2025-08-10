@@ -72,3 +72,42 @@ def find_teachers(information):
             return i   # stop the loop and exit this function
     else:
         print(f'there are no information about {information}')
+
+
+# Front desk function
+
+def find_student_by_id(student_id):
+    for a in student_db:
+        if a['id'] == student_id:
+            return a   # as long as the student is found, return his information and stop this function
+    else:
+        return None
+    # use if-else statement to get whether the stuent are in list
+
+def front_desk_register(name, instrument):
+    global next_student_id
+    try:
+        new_student = Student(next_student_id, name)
+        student_db.append(new_student.dictionary)   # store as dictionary
+        
+    
+        front_desk_enrol(new_student.id, instrument)    # call function in another function
+        # use fuction there to exam whether this student is appended successfully, if not print 'Error: Student ID {student_id} not found.'
+        print(f"Front Desk: Successfully registered '{name}' and enrolled them in '{instrument}'.")
+        next_student_id += 1          # prepare for next student
+    except Exception as e:
+        print(f'error: {e}')          # prevent there are no information in student[enrolled_in] which may cause breakdown
+
+def front_desk_enrol(student_id, instrument):
+    student = find_student_by_id(student_id)
+    if student:
+        student['enrolled_in'].append(instrument)
+        print(f"Front Desk: Enrolled student {student_id} in '{instrument}'.")
+    else:
+        print(f"Error: Student ID {student_id} not found.")
+    # test whether this student in student_db list
+
+def front_desk_lookup(information):
+    print(f'\t{information} is loading')
+    find_students(information)
+    find_teachers(information)
