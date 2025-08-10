@@ -111,3 +111,64 @@ def front_desk_lookup(information):
     print(f'\t{information} is loading')
     find_students(information)
     find_teachers(information)
+
+
+# Main application
+def main():
+    # provide initail data (two teacher)
+    add_teacher("Dr. Keys", "Piano")
+    add_teacher("Ms. Fret", "Guitar")
+    choice = 1
+    while choice!='q':
+        print("\n===== Music School Front Desk =====")
+        print("1. Register New Student")
+        print("2. Enrol Existing Student")
+        print("3. Lookup Student or Teacher")
+        print("4. (Admin) List all Students")
+        print("5. (Admin) List all Teachers")
+        print("q. Quit")
+        
+        choice = input("Enter your choice: ").strip()
+
+        # Register New Student
+        if choice == '1':  
+            name = input("Enter student name: ")
+            instrument = input("Enter instrument to enrol in: ")
+            front_desk_register(name, instrument)
+            time.sleep(3)     # wait user look information
+            continue
+        # Enrol Existing Student
+        elif choice == '2':
+            try:
+                student_id = int(input("Enter student ID: "))
+                instrument = input("Enter instrument to enrol in: ")
+                front_desk_enrol(student_id, instrument)
+                time.sleep(3)
+            except ValueError:
+                print("Invalid ID. Please enter a number.")
+            finally:
+                continue   # make sure the program go into next loop
+        # Lookup Student or Teacher
+        elif choice == '3':
+            information = input("Enter search term: ")
+            front_desk_lookup(information)
+            time.sleep(3)
+            continue
+        # List all Students
+        elif choice == '4':
+            list_students()
+            time.sleep(5)
+            continue
+        # List all Teachers
+        elif choice == '5':
+            list_teachers()
+            time.sleep(5)
+            continue
+        # Protect form other condition
+        elif choice not in ['1','2','3','4','5','q']:
+            print("Invalid choice. Please try again.")
+            continue
+
+# The entry of main program
+if __name__ == "__main__":
+    main()
