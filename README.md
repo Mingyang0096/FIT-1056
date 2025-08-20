@@ -1,53 +1,88 @@
- Music School Management System (MSMS) — PST1 Prototype
+Here is a plain text README for your uploaded program with only newline and tab formatting.
 
-This is a prototype project for FIT1056 PST1, developed in Python. It manages student registration, teacher data, course enrolment, and information lookup through a menu-driven interface. All data is stored in memory, with no need for file or database operations.
+Music School Management System (MSMS)
 
-Project Features:
+1	Overview
+The Music School Management System is a Python-based command line application for managing student, teacher, enrollment, and attendance data in a music school. It uses JSON files for persistent storage and provides an interactive menu for CRUD operations.
 
-Models for Student and Teacher using Python classes
-In-memory databases: student_db and teacher_db with auto-generated IDs
-Core functions: add teachers, list students/teachers, search by name or speciality
-Front desk features: register student, enrol in course, look up student/teacher info
-Simple command-line interaction with user-friendly prompts and basic error handling
+2	Main Features
+- Persistent data storage using JSON files
+- Student management
+	- Register new students with unique IDs
+	- Add instruments for existing students
+	- List all students
+	- Remove students
+	- Print student ID card to a text file
+- Teacher management
+	- Add new teachers with specialities
+	- List all teachers
+	- Search teachers by name or speciality
+- Attendance management
+	- Check in students with a timestamp and course ID
+- Search functions
+	- Search students by name
+	- Search teachers by name or speciality
+- File handling
+	- Load existing JSON data files
+	- Create and initialize new data files
 
-How to Run:
+3	Requirements
+- Python 3.7 or higher
+- Standard library only (os, json, time)
+- Works on Windows, macOS, and Linux
 
-Open a Python 3 environment
-Run the command: python MSMS.py
-Follow on-screen menu instructions to interact
+4	How to Run
+1. Open a terminal and navigate to the project directory
+2. Run the program
+	python PST2.py
+3. When prompted, enter the full path to an existing JSON data file or choose to create a new one
 
-File Structure:
-MSMS.py: main program with all code
-README.md: project documentation (this file)
+5	Menu Options
+===== MSMS v2 (Persistent) =====
+1	Register New Student
+2	Enrol Existing Student
+3	Lookup Student or Teacher
+4	(Admin) List all Students
+5	(Admin) List all Teachers
+6	Check-in Student
+7	Print Student Card
+8	Remove Student
+9	Restart
+q	Quit
 
-Design Notes:
+6	Example JSON Data Structure
+{
+	"students": [
+		{
+			"id": 1,
+			"name": "Alice",
+			"enrolled_in": ["Piano", "Violin"]
+		}
+	],
+	"teachers": [
+		{
+			"id": 1,
+			"name": "Mr. Smith",
+			"speciality": "Piano"
+		}
+	],
+	"attendance": [
+		{
+			"student_id": 1,
+			"course_id": 101,
+			"timestamp": "2025-08-15 10:30"
+		}
+	],
+	"next_student_id": 2,
+	"next_teacher_id": 2
+}
 
-Data stored in dictionaries inside lists, making it easy to manage and display
-Global counters used to generate unique IDs
-Lookup uses string matching by name or speciality
-CLI interface uses input and sleep for smoother interaction
+7	Defensive Programming Notes
+- The program handles missing files by prompting to create a new one
+- It is recommended to check that file paths point to actual files before calling open
+- Only provide complete file paths including the file name and extension
 
-Assumptions: each student can enrol in multiple courses; teacher names are not required to be unique
-
-
-Common Issues & Suggestions:
-
-Search by teacher speciality is case-sensitive — consider normalizing case
-Student search requires exact name match — partial or multi-result search could improve usability
-Error handling can be more precise to help debugging
-Output formatting could be enhanced (e.g. aligned columns)
-
-
-Demo Prep Suggestions:
-
-Show how to register and enrol a student
-Enrol an existing student in a new course
-Demonstrate lookup and listing functions
-Be ready to explain design choices, data structures, and improvements
-
-
-Git Submission Tips:
-
-Commit after finishing each feature
-Push to the individual branch on GitHub
-Use clear commit messages like “feat: implement core helper functions”
+8	Important Notes
+- Enter valid file paths including the file name and extension when loading data
+- Printed student cards are saved to a chosen folder as plain text
+- Deleted student records cannot be recovered without manually editing the JSON data
