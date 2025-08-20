@@ -88,6 +88,46 @@ def create_file():
             pass
     return (path)
 
+def check_in(student_id,course_id):
+    # Append an attendance record with current local timestamp for a student and course.
+    app_data=load_data()
+    ts = time.time()
+    local_time=time.localtime(ts)
+    t=time.strftime("%Y-%m-%d %H:%M",local_time)
+    a={'student_id':student_id,'course_id':course_id,'timestamp':t}
+    app_data["attendance"].append(a)
+    save_data(app_data)
+
+def print_student_card(student_id):
+    # Generate a plain text ID badge for a student and save it to a user-chosen folder.
+    # The file name is "<name>'s card.txt".
+    app_data=load_data()
+    path=None
+    for i in app_data['students']:
+        if student_id==i['id']:
+            path=input("choose a folder to store this file:\n")
+            path=os.path.join(path,f"{i['name']}'s card.txt")
+            break
+        else:
+            continue
+    if not path:
+        # If the student is not found, notify and exit.
+        print("no found")
+        return
+    try:
+        with open(path,'w',encoding="utf-8") as f:
+            # Simple formatted card content.
+            f.write("========================\n")
+            f.write(f"  MUSIC SCHOOL ID BADGE\n")
+            f.write("========================\n")
+            f.write(f"ID: {i['id']}\n")
+            f.write(f"Name: {i['name']}\n")
+            f.write(f"Enrolled In: {', '.join(i.get('enrolled_in', []))}\n")
+        print(f"Printed student card to {path} successfully.")
+    except Exception as e:
+        # Any I O or path error is reported here.
+        print(f"Error: {e}")
+
 # Core helper functions
 
 # add theacher into teacher_db
@@ -156,42 +196,145 @@ def find_teachers(information):
     else:
         print(f'there are no information about {information}')
 
-def check_in(student_id,course_id):
-    # Append an attendance record with current local timestamp for a student and course.
-    app_data=load_data()
-    ts = time.time()
-    local_time=time.localtime(ts)
-    t=time.strftime("%Y-%m-%d %H:%M",local_time)
-    a={'student_id':student_id,'course_id':course_id,'timestamp':t}
-    app_data["attendance"].append(a)
-    save_data(app_data)
 
-def print_student_card(student_id):
-    # Generate a plain text ID badge for a student and save it to a user-chosen folder.
-    # The file name is "<name>'s card.txt".
+# Front desk function
+
+def find_student_by_id(student_id):
+    # Return the student dict by id or None if not found.
     app_data=load_data()
-    path=None
-    for i in app_data['students']:
-        if student_id==i['id']:
-            path=input("choose a folder to store this file:\n")
-            path=os.path.join(path,f"{i['name']}'s card.txt")
-            break
-        else:
-            continue
-    if not path:
-        # If the student is not found, notify and exit.
-        print("no found")
-        return
+    for a in app_data['students']:
+        if a['id'] == student_id:
+            return a   # as long as the student is found, return his information and stop this function
+    else:
+        return None
+    # use if-else statement to get whether the stuent are in list
+
+def front_desk_register(name, instrument):
+    # Register a new student, save, enroll them in an instrument, then increment the student id counter and save again.
+    # Note: The id is incremented after enrollment so the newly created id is used immediately for enrollment.
+    app_data=load_data()
     try:
-        with open(path,'w',encoding="utf-8") as f:
-            # Simple formatted card content.
-            f.write("========================\n")
-            f.write(f"  MUSIC SCHOOL ID BADGE\n")
-            f.write("========================\n")
-            f.write(f"ID: {i['id']}\n")
-            f.write(f"Name: {i['name']}\n")
-            f.write(f"Enrolled In: {', '.join(i.get('enrolled_in', []))}\n")
-        print(f"Printed student card to {path} successfully.")
+        new_student = Student(name, app_data['next_student_id'])
+        app_data['students'].append(new_student.dictionary)  
+        save_data(app_data)
+        front_desk_enrol(new_student.id, instrument)    # call function in another function
+        # Use function here to confirm the student is appended successfully; 
+        # if not, print 'Error: Student ID {student_id} not found.'
+        print(f"Front Desk: Successfully registered '{name}' and enrolled them in '{instrument}'.")
+        app_data=load_data()
+        app_data['next_student_id'] += 1          # Prepare for the next student registration
+        save_data(app_data)
     except Exception as e:
-        # Any I O or path error is reported here.
-        print(f"Error: {e}")
+        # Broad exception catch to prevent application crash from unexpected state
+        print(f'error: {e}')          
+
+def front_desk_enrol(student_id, instrument):
+    # Enroll an existing student in a new instrument
+    app_data = load_data()
+    if app_data is None:
+        # Exit if data loading failed
+        return
+    for a in app_data['students']:
+        if a['id'] == student_id:
+            a.setdefault('enrolled_in', [])
+            a['enrolled_in'].append(instrument)
+            save_data(app_data)
+            print(f"Front Desk: Enrolled student {student_id} in '{instrument}'.")
+            return
+    print(f"Error: Student ID {student_id} not found.")
+
+def front_desk_lookup(information):
+    # Perform search for both students and teachers
+    print(f'\t{information} is loading')
+    find_students(information)
+    find_teachers(information)
+
+# Main application
+def main():
+    # Entry point for the program
+    global r_path
+    r_path=input("input the file path you want to load and fix:\n").strip()
+    # If the file path is a directory, open will fail
+    load_data()
+    choice = 1
+    while choice!='q':
+        print("\n===== MSMS v2 (Persistent) =====")
+        print("1. Register New Student")
+        print("2. Enrol Existing Student")
+        print("3. Lookup Student or Teacher")
+        print("4. (Admin) List all Students")
+        print("5. (Admin) List all Teachers")
+        print("6. Check-in Student")
+        print("7. Print Student Card")
+        print("8. Remove Student")
+        print("9. Restart")
+        print("q. Quit")
+        
+        choice = input("Enter your choice: ").strip()
+
+        if choice == '1':  
+            # Register new student flow
+            name = input("Enter student name: ")
+            instrument = input("Enter instrument to enrol in: ")
+            front_desk_register(name, instrument)
+            time.sleep(3)     
+            continue
+        elif choice == '2':
+            # Enrol an existing student
+            try:
+                student_id = int(input("Enter student ID: "))
+                instrument = input("Enter instrument to enrol in: ")
+                front_desk_enrol(student_id, instrument)
+                time.sleep(3)
+            except ValueError:
+                # Handle non-integer ID inputs
+                print("Invalid ID. Please enter a number.")
+            finally:
+                continue
+        elif choice == '3':
+            # Lookup student or teacher
+            information = input("Enter search term: ")
+            front_desk_lookup(information)
+            time.sleep(3)
+            continue
+        elif choice == '4':
+            # List all students
+            list_students()
+            time.sleep(5)
+            continue
+        elif choice == '5':
+            # List all teachers
+            list_teachers()
+            time.sleep(5)
+            continue
+        elif choice == '6':  
+            # Student check-in
+            x=int(input("input your student_id:\n"))
+            y=int(input("input your course_id:\n"))
+            check_in(x,y)
+            time.sleep(5)
+        elif choice == '7':
+            # Print student card
+            information=int(input("input student's id:\n"))
+            print_student_card(information)
+            time.sleep(5)
+        elif choice == '8':
+            # Remove student
+            information=int(input("input student's id:\n"))
+            remove_student(information)
+            time.sleep(5)
+        elif choice == 'q':
+            # Quit application
+            print('see you')
+            break
+        elif choice == '9':
+            # Restart program
+            return main()
+        else:
+            # Handle invalid menu choices
+            print("Invalid choice. Please try again.")
+            continue
+
+if __name__ == "__main__":
+    # Program entry point
+    main()
