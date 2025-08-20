@@ -87,3 +87,71 @@ def create_file():
         with open(path,"w",encoding="utf-8") as file:
             pass
     return (path)
+
+# Core helper functions
+
+# add theacher into teacher_db
+def add_teacher(name, speciality):
+    # Create a teacher with the next available ID, append to list, increment counter, and persist.
+    app_data=load_data()
+    new_teacher = Teacher(name, app_data["next_teacher_id"], speciality)
+    app_data["teachers"].append(new_teacher.dictionary)
+    app_data['next_teacher_id'] += 1      # act as a counter for teacher's id
+    save_data(app_data)
+    print(f"Core: Teacher '{name}' added successfully.")   # use 'f' srting to output dictionary information (including key and value)
+
+def remove_student(student_id):
+    # Remove a student with matching id from the students list and persist changes.
+    app_data=load_data()
+    for i in app_data["students"]:
+        if student_id==i['id']:
+            app_data['students'].remove(i)
+            save_data(app_data)
+            print("save successfully")
+            return
+    else:
+        print("no found")
+    
+# list all information of students
+def list_students():
+    # Print a simple table-like list of all students.
+    app_data=load_data()
+    print('-'*5,'Student List','-'*5)
+    if app_data=={}:
+        # This condition is rarely true; if load_data failed it may be None which is not handled here.
+        print("There are no students")
+        return
+    # stop this function and output the failure
+    for a in app_data['students']:
+        print(f"id: {a['id']}  name: {a['name']}  enrolled_in: {a['enrolled_in']}")
+    # use the the 'f' string to output all information of students (dictionary data type)
+
+def list_teachers():
+    # Print a simple list of all teachers.
+    app_data=load_data()
+    print('-'*5,'Teacher List','-'*5)
+    for teacher in app_data['teachers']:
+        print(f"id: {teacher['id']}, name: {teacher['name']}  speciality: {teacher['speciality']}")
+    # output the differnt values of very keys
+
+def find_students(information):
+    # Case-insensitive exact-name search for a student. Prints the dict if found.
+    app_data=load_data()
+    information=str(information).strip().lower()      # add str() function to make sure it can be operated by strip() and lower()
+    for i in app_data['students']:
+        if information==i['name'].lower():   
+            print(i)
+            return   # stop the loop and exit this function
+    else:
+        print(f'there are no information about {information}')
+
+def find_teachers(information):
+    # Case-insensitive search in either teacher name or speciality.
+    app_data=load_data()
+    information=str(information).strip().lower()      # use strip() firstly and lower() secondly fasten the speed
+    for i in app_data['teachers']:
+        if information in (i['name'].lower(),i['speciality'].lower()):   # store very value as tuple, and test whether information is in very tuple
+            print(i)
+            return   # stop the loop and exit this function
+    else:
+        print(f'there are no information about {information}')
