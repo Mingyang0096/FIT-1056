@@ -155,3 +155,43 @@ def find_teachers(information):
             return   # stop the loop and exit this function
     else:
         print(f'there are no information about {information}')
+
+def check_in(student_id,course_id):
+    # Append an attendance record with current local timestamp for a student and course.
+    app_data=load_data()
+    ts = time.time()
+    local_time=time.localtime(ts)
+    t=time.strftime("%Y-%m-%d %H:%M",local_time)
+    a={'student_id':student_id,'course_id':course_id,'timestamp':t}
+    app_data["attendance"].append(a)
+    save_data(app_data)
+
+def print_student_card(student_id):
+    # Generate a plain text ID badge for a student and save it to a user-chosen folder.
+    # The file name is "<name>'s card.txt".
+    app_data=load_data()
+    path=None
+    for i in app_data['students']:
+        if student_id==i['id']:
+            path=input("choose a folder to store this file:\n")
+            path=os.path.join(path,f"{i['name']}'s card.txt")
+            break
+        else:
+            continue
+    if not path:
+        # If the student is not found, notify and exit.
+        print("no found")
+        return
+    try:
+        with open(path,'w',encoding="utf-8") as f:
+            # Simple formatted card content.
+            f.write("========================\n")
+            f.write(f"  MUSIC SCHOOL ID BADGE\n")
+            f.write("========================\n")
+            f.write(f"ID: {i['id']}\n")
+            f.write(f"Name: {i['name']}\n")
+            f.write(f"Enrolled In: {', '.join(i.get('enrolled_in', []))}\n")
+        print(f"Printed student card to {path} successfully.")
+    except Exception as e:
+        # Any I O or path error is reported here.
+        print(f"Error: {e}")
