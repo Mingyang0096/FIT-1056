@@ -1,0 +1,74 @@
+{
+    "students": [
+        {
+            "user_id": 1,
+            "name": "Alice Johnson",
+            "enrolled_course_ids": [
+                103
+            ]
+        },
+        {
+            "user_id": 2,
+            "name": "Bob Williams",
+            "enrolled_course_ids": [
+                102
+            ]
+        }
+    ],
+    "teachers": [
+        {
+            "id": 1,
+            "name": "Evelyn Keys",
+            "speciality": "Piano",
+            "course_ids": [],
+            "last_updated": "2025-09-07 12:20:22"
+        },
+        {
+            "id": 2,
+            "name": "David Fret",
+            "speciality": "Guitar",
+            "course_ids": [],
+            "last_updated": "2025-09-07 12:20:22"
+        },
+        {
+            "id": 3,
+            "name": "Mark",
+            "speciality": "piano",
+            "course_ids": [],
+            "last_updated": "2025-09-07 12:23:10"
+        }
+    ],
+    "courses": [
+        {
+            "id": 102,
+            "name": "Acoustic Guitar Fundamentals",
+            "teacher_id": 2,
+            "enrolled_student_ids": [
+                2
+            ]
+        },
+        {
+            "id": 103,
+            "name": "Intermediate Piano",
+            "teacher_id": 1,
+            "enrolled_student_ids": [
+                1
+            ]
+        }
+    ],
+    "attendance": [
+        {
+            "student_id": 1,
+            "course_id": 101,
+            "timestamp": "2025-07-14T15:58:30.123456"
+        },
+        {
+            "student_id": 2,
+            "course_id": 102,
+            "timestamp": "2025-07-14T16:02:45.654321"
+        }
+    ],
+    "next_student_id": 3,
+    "next_teacher_id": 4,
+    "next_course_id": 104
+}
