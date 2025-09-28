@@ -1,0 +1,94 @@
+{
+    "students": [
+        {
+            "user_id": 1,
+            "name": "Alice Johnson",
+            "enrolled_course_ids": [
+                103
+            ]
+        },
+        {
+            "user_id": 2,
+            "name": "Bob Williams",
+            "enrolled_course_ids": [
+                102
+            ]
+        },
+        {
+            "user_id": 7,
+            "name": "Mark",
+            "enrolled_course_ids": [
+                105
+            ]
+        },
+        {
+            "user_id": 8,
+            "name": "Mark",
+            "enrolled_course_ids": [
+                105
+            ]
+        }
+    ],
+    "teachers": [
+        {
+            "id": 1,
+            "name": "Evelyn Keys",
+            "speciality": "Piano",
+            "course_ids": [],
+            "last_updated": "2025-09-07 12:20:22"
+        },
+        {
+            "id": 2,
+            "name": "David Fret",
+            "speciality": "Guitar",
+            "course_ids": [],
+            "last_updated": "2025-09-07 12:20:22"
+        },
+        {
+            "id": 4,
+            "name": "Jonh Smism",
+            "speciality": "Violin",
+            "course_ids": [],
+            "last_updated": "2025-09-28 14:27:08"
+        }
+    ],
+    "courses": [
+        {
+            "id": 102,
+            "name": "Acoustic Guitar Fundamentals",
+            "teacher_id": 2,
+            "enrolled_student_ids": [
+                2
+            ]
+        },
+        {
+            "id": 103,
+            "name": "Intermediate Piano",
+            "teacher_id": 1,
+            "enrolled_student_ids": [
+                1
+            ]
+        },
+        {
+            "id": 105,
+            "name": "Violin",
+            "teacher_id": "Violin",
+            "enrolled_student_ids": []
+        }
+    ],
+    "attendance": [
+        {
+            "student_id": 1,
+            "course_id": 101,
+            "timestamp": "2025-07-14T15:58:30.123456"
+        },
+        {
+            "student_id": 2,
+            "course_id": 102,
+            "timestamp": "2025-07-14T16:02:45.654321"
+        }
+    ],
+    "next_student_id": 9,
+    "next_teacher_id": 5,
+    "next_course_id": 106
+}
