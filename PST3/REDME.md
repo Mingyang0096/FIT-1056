@@ -77,3 +77,7 @@ During development, several issues were encountered and resolved.
 7. Name validation failed after switching to relative path Cause: New JSON file loaded contained teacher names with punctuation (e.g., Dr.). Fix: Cleaned JSON names or relaxed regex to allow more characters.
 
 8. JSON teacher names with invalid characters Cause: Regex in User class only allowed letters and spaces. Fix: Updated JSON to remove invalid characters or adjusted regex to permit them.
+
+-----GitHub Account-----
+e-mail: mhan0096@student.monash.edu
+password: 060723han

@@ -1,5 +1,7 @@
 MSMS Dashboard — README (English, plain text)
 
+URL: https://github.com/Mingyang0096/FIT-1056.git
+
 Project overview
 MSMS Dashboard is a Streamlit-based demonstration/admin interface for a simple music-school management system. This release simplifies permissions by concentrating most management features under a single admin role; students have read-only access to their own info and attendance queries.
 
