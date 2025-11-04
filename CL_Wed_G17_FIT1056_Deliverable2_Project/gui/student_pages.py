@@ -19,31 +19,41 @@ def patients_page(svc, user):
     st.header(t("patients"))
     role = user["role"]
 
-    with st.form("pat_search_form", clear_on_submit=False):
-        kw = st.text_input(t("search_patient_name_or_tag"), key="pat_search_kw")
-        do_pat = st.form_submit_button(t("search"))
-    if do_pat:
-        rows = svc.search_patients(kw)
-        st.session_state["pat_rows"] = rows
+    # Fetch all patient entries
+    all_patients = svc.get_all_patients()
+    patient_options = {f"{p['id']} - {p.get('name', 'N/A')}": p for p in all_patients}
+    patient_options_list = [t("all_patients")] + list(patient_options.keys())
 
+    # Use a dropdown instead of a search text box
+    selected = st.selectbox(t("select_patient_to_view"), patient_options_list, key="pat_select")
+
+    # Show patients based on the selection
+    if selected == t("all_patients"):
+        rows = all_patients
+    elif selected in patient_options:
+        rows = [patient_options[selected]]
+    else:
+        rows = []
+
+    st.session_state["pat_rows"] = rows
     rows = st.session_state.get("pat_rows", [])
     for p in rows[:200]:
         name_disp = p.get("name","")
         if st.session_state.get("lang","en")=="zh" and role not in ("Admin","Auditor"):
-            # 隐私遮罩
+            # Privacy masking
             name_disp = mask_name(name_disp)
         dob_disp = p.get("dob","") or "-"
         tags_disp = ", ".join(p.get("tags",[])) or "-"
         with st.container():
-            c1, c2, c3, c4 = st.columns([2, 1.2, 1.2, 2])
-            c1.markdown(f"**{name_disp}**")
-            c2.markdown(f"{t('patient_id')}: `{p['id']}`")
+            c1, c2, c3, c4 = st.columns([1.5, 1.5, 1.2, 2])
+            c1.markdown(f"**{t('patient_id')}: {p['id']}**")
+            c2.markdown(f"**{t('name')}: {name_disp}**")
             c3.markdown(f"{t('dob')}: {dob_disp}")
             c4.markdown(f"{t('tags')}: {tags_disp}")
 
             with st.expander("操作" if st.session_state.get("lang","en")=="zh" else "Actions"):
                 if role in ("Admin","Nurse","Doctor"):
-                    # 编辑（回车提交保存）
+                    # Edit (press Enter to submit)
                     with st.form(f"pat_edit_form_{p['id']}", clear_on_submit=False):
                         newname = st.text_input(f'{t("edit_name")} {p["id"]}', value=p.get("name",""), key="nm_"+p["id"])
                         newdob  = st.text_input(f'{t("edit_dob")} {p["id"]}',  value=p.get("dob",""), key="db_"+p["id"])
@@ -55,7 +65,7 @@ def patients_page(svc, user):
                             st.success(t("saved"))
                         except Exception as e:
                             st.error(str(e))
-                    # 自分配（回车提交）
+                    # Self-assign (press Enter to submit)
                     with st.form(f"pat_assign_self_{p['id']}", clear_on_submit=False):
                         do_assign = st.form_submit_button(t("assign_to_me"))
                     if do_assign:
@@ -79,7 +89,7 @@ def patients_page(svc, user):
 def preferences_page(svc, user):
     st.header(t("preferences"))
 
-    # 语言与可访问性（回车提交）
+    # Language and accessibility (press Enter to submit)
     with st.form("prefs_lang_form", clear_on_submit=False):
         st.write(t("language_accessibility"))
         lang  = st.selectbox(t("language"), ["en","zh"],
@@ -92,7 +102,7 @@ def preferences_page(svc, user):
         st.session_state["large_text"] = st.session_state.get("pref_large_text", False)
         st.success(t("saved"))
 
-    # 病人偏好（回车提交）
+    # Patient preferences (press Enter to submit)
     with st.form("prefs_patient_form", clear_on_submit=False):
         pid = st.text_input(t("patient_id"), key="pref_pid")
         diet = st.text_input(t("diet"), key="pref_diet")

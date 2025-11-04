@@ -123,10 +123,12 @@ All core operations live in `CareLog_structured/app/service.py` as `CareLogServi
 - `edit_story(sid: str, text: str)`
 - `add_observation(username: str, pid: str, vid: str, pain: int, appetite: str, note: str) -> str`
 - `edit_observation(oid: str, ...)`
-- `soft_delete_story(sid: str)`
+- `soft_delete_story(actor: str, sid: str)`
 - `soft_delete_observation(oid: str)`
-- `list_recent_observations(limit: int = 20) -> List[dict]`
-- `list_history_observations(pid: str, limit: int = 100) -> List[dict]`
+- `list_recent_observations(days: int = 90, username: Optional[str] = None, patient_id: Optional[str] = None, deleted: Optional[bool] = False) -> List[dict]`
+- `list_history_observations(before_days: int = 90, username: Optional[str] = None, patient_id: Optional[str] = None, deleted: Optional[bool] = False) -> List[dict]`
+- `list_recent_stories(days: int = 90, username: Optional[str] = None, patient_id: Optional[str] = None, deleted: Optional[bool] = False) -> List[dict]`
+- `list_history_stories(before_days: int = 90, username: Optional[str] = None, patient_id: Optional[str] = None, deleted: Optional[bool] = False) -> List[dict]`
 - `create_or_update_handover(pid: str, text: str)`
 - `text_report(pid: str) -> str`
 

@@ -1,6 +1,6 @@
 # gui/main_dashboard.py
 import streamlit as st
-st.set_page_config(initial_sidebar_state="expanded") # <-- 确保侧边栏默认展开
+st.set_page_config(initial_sidebar_state="expanded") # <-- ensure the sidebar is expanded by default
 
 from app.i18n import STR
 from app.service import CareLogService
@@ -64,14 +64,14 @@ def hide_streamlit_chrome():
 
 
 def login_view(svc: CareLogService):
-    # 确保默认语言；为语言选择器使用单独的 key，避免和 session_state["lang"] 冲突
+    # Ensure the default language; use a dedicated key for the selector to avoid clashing with session_state["lang"]
     if "lang" not in st.session_state:
         st.session_state["lang"] = "en"
     st.session_state.setdefault("lang_select", st.session_state["lang"])
 
     st.title(t("app_title"))
 
-    # —— 顶部语言行：标签 | 下拉 | 按钮（对齐）——
+    # -- Top language row: label | dropdown | button (aligned) --
     c_label, c_select, c_btn = st.columns([0.8, 2.5, 0.8])
     with c_label:
         st.markdown(f"**{t('language')}**")
@@ -87,11 +87,11 @@ def login_view(svc: CareLogService):
             st.session_state["lang"] = st.session_state.get("lang_select", "en")
             st.rerun()
 
-    # 登录 / 注册 切换
+    # Login / register toggle
     mode = st.radio("", [t("sign_in"), t("create_account")], horizontal=True, index=0)
 
     if mode == t("sign_in"):
-        # —— 登录表单：按 Enter 即提交 ——
+        # -- Login form: submit on Enter --
         with st.form("signin_form", clear_on_submit=False):
             u = st.text_input(t("username"), key="signin_username")
             p = st.text_input(t("password"), type="password", key="signin_password")
@@ -105,7 +105,7 @@ def login_view(svc: CareLogService):
                 st.error(t("sign_in_failed"))
 
     else:
-        # —— 注册表单：按 Enter 即提交 ——
+        # -- Registration form: submit on Enter --
         display_to_role = {
             t("role_admin"): "Admin",
             t("role_auditor"): "Auditor",
@@ -132,22 +132,37 @@ def login_view(svc: CareLogService):
                 st.error(str(e))
 
 def navbar():
-    # 从 session 中获取角色，供后续使用
+    # Pull the role from session for later use
     role = st.session_state['user']['role']
+    username = st.session_state['user']['username']
 
-    # 折叠的“工具”与账号区（默认收起）
+    # Obtain the service instance
+    svc = get_service()
+
+    # Collapsed "Tools" and account section (collapsed by default)
     with st.sidebar.expander(t("tools"), expanded=False):
-        # 角色信息
+        # Username info
+        st.markdown(f"**{t('username')}：**{username}")
+        # Role info
         st.markdown(f"**{t('role')}：**{role_display(role)}")
 
-        # 退出按钮
+        # If the role is Patient, show the patient ID and name
+        if role == "Patient":
+            patient_info = svc.get_patient_info_for_user(username)
+            if patient_info:
+                st.markdown(f"**{t('patient_id')}：**{patient_info['id']}")
+                st.markdown(f"**{t('patient_name')}：**{patient_info['name']}")
+            else:
+                st.info(t("no_patient_record_linked"))
+
+        # Sign-out button
         if st.button(t("sign_out"), use_container_width=True, key="btn_logout"):
-            # 清理登录状态并重载
+            # Clear login state and reload
             if "user" in st.session_state:
                 del st.session_state["user"]
             st.rerun()
 
-        # 工具按钮（两列）
+        # Tool buttons (two columns)
         c1, c2 = st.columns(2)
         if c1.button(t("toolbar_rerun"), use_container_width=True, key="btn_rerun"):
             st.rerun()
@@ -178,7 +193,14 @@ def navbar():
     visible = []
     if role in ("Admin","Nurse","Doctor"):
         visible += ["patients","observations","stories","handover"]
-    visible += ["preferences","search","report"]
+
+    # Patient role shows preferences and reports
+    if role == "Patient":
+        visible += ["preferences","report"]
+    # Other roles (nurse, doctor, auditor, admin) show search and reports without preferences
+    else:
+        visible += ["search","report"]
+
     if role in ("Auditor","Admin"):
         visible += ["auditor"]
     if role == "Admin":
@@ -191,7 +213,7 @@ def main():
     if "lang" not in st.session_state:
         st.session_state["lang"] = "en"
     inject_a11y_css()
-    hide_streamlit_chrome()       # 调用新的 CSS 函数
+    hide_streamlit_chrome()       # Call the new CSS helper
     svc = get_service()
     if "user" not in st.session_state:
         login_view(svc)
@@ -199,6 +221,14 @@ def main():
 
     page = navbar()
     user = st.session_state["user"]
+
+    # If the role is Patient, show patient information at the top of the main view
+    if user["role"] == "Patient":
+        patient_info = svc.get_patient_info_for_user(user["username"])
+        if patient_info:
+            st.info(f"**{t('patient_id')}:** {patient_info['id']} | **{t('patient_name')}:** {patient_info['name']}")
+        else:
+            st.warning(t("no_patient_record_linked"))
 
     if page == "patients":
         patients_page(svc, user)

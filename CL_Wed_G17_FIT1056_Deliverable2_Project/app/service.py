@@ -1,6 +1,6 @@
 # app/service.py
 from __future__ import annotations
-from typing import List, Optional
+from typing import List, Optional, Tuple, Set, Any
 from datetime import datetime, timezone, timedelta
 import hashlib, uuid, csv, io, re
 
@@ -13,6 +13,10 @@ class CareLogService:
     def __init__(self, repo):
         self.repo = repo
         self.data = repo.load()
+
+    # ===== NEW: searchable types for the unified iterator/selector =====
+    # Entity types supported on the Search page (pluralized to match bucket keys)
+    SEARCHABLE_TYPES: Set[str] = {"observations", "stories", "visits", "preferences", "handover_notes"}
 
     # ---------- id helpers ----------
     def _ensure_next_ids(self):
@@ -53,6 +57,19 @@ class CareLogService:
 
     def get_assigned_patient_ids(self, username:str) -> List[str]:
         return [a["patient_id"] for a in self.data.get("assignments", []) if a["username"]==username]
+
+    def get_patient_info_for_user(self, username:str) -> Optional[dict]:
+        """Get patient record information for a user (typically for Patient role)."""
+        patient_ids = self.get_assigned_patient_ids(username)
+        if not patient_ids:
+            return None
+        # Return the first assigned patient (typically patients have one record)
+        pid = patient_ids[0]
+        try:
+            patient = self._get_patient(pid)
+            return {"id": patient["id"], "name": patient.get("name", ""), "dob": patient.get("dob", "")}
+        except:
+            return None
 
     # ---------- NEW: list users for UI ----------
     def list_users(self, roles: Optional[List[str]] = None, only_enabled: bool = True) -> List[dict]:
@@ -208,6 +225,10 @@ class CareLogService:
                 res.append(p)
         return res
 
+    def get_all_patients(self):
+        """Get all non-deleted patients."""
+        return [p for p in self.data.get("patients", []) if not p.get("deleted")]
+
     def _get_patient(self, pid:str) -> dict:
         p = next((x for x in self.data.get("patients", []) if x["id"]==pid and not x.get("deleted")), None)
         if not p: raise ValueError("patient not found")
@@ -259,14 +280,25 @@ class CareLogService:
         o["deleted"] = True
         self.repo.save(self.data)
 
-    def list_recent_observations(self, days:int=90, username:Optional[str]=None):
+    def list_recent_observations(
+        self,
+        days:int=90,
+        username:Optional[str]=None,
+        patient_id:Optional[str]=None,
+        deleted:Optional[bool]=False,
+    ):
         cutoff = datetime.now(timezone.utc).astimezone() - timedelta(days=days)
         allowed_pids = None
         if username and self._role(username) not in ("Admin","Auditor"):
             allowed_pids = set(self.get_assigned_patient_ids(username))
         res = []
         for o in self.data.get("observations", []):
-            if o.get("deleted"): continue
+            is_deleted = o.get("deleted", False)
+            if deleted is False and is_deleted:
+                continue
+            if deleted is True and not is_deleted:
+                continue
+            if patient_id and o.get("patient_id") != patient_id: continue
             if allowed_pids is not None and o["patient_id"] not in allowed_pids: continue
             ts = datetime.fromisoformat(o["created_at"])
             if ts >= cutoff:
@@ -274,14 +306,25 @@ class CareLogService:
         res.sort(key=lambda x: x["created_at"], reverse=True)
         return res
 
-    def list_history_observations(self, before_days:int=90, username:Optional[str]=None):
+    def list_history_observations(
+        self,
+        before_days:int=90,
+        username:Optional[str]=None,
+        patient_id:Optional[str]=None,
+        deleted:Optional[bool]=False,
+    ):
         cutoff = datetime.now(timezone.utc).astimezone() - timedelta(days=before_days)
         allowed_pids = None
         if username and self._role(username) not in ("Admin","Auditor"):
             allowed_pids = set(self.get_assigned_patient_ids(username))
         res = []
         for o in self.data.get("observations", []):
-            if o.get("deleted"): continue
+            is_deleted = o.get("deleted", False)
+            if deleted is False and is_deleted:
+                continue
+            if deleted is True and not is_deleted:
+                continue
+            if patient_id and o.get("patient_id") != patient_id: continue
             if allowed_pids is not None and o["patient_id"] not in allowed_pids: continue
             ts = datetime.fromisoformat(o["created_at"])
             if ts < cutoff:
@@ -309,11 +352,69 @@ class CareLogService:
         s["text"] = text or ""
         self.repo.save(self.data)
 
-    def soft_delete_story(self, sid:str):
+    def soft_delete_story(self, actor:str, sid:str):
         s = next((x for x in self.data.get("stories", []) if x["id"]==sid), None)
         if not s: raise ValueError("story not found")
+        if s.get("deleted"):
+            return
+        actor_name = actor or "system"
         s["deleted"] = True
+        s["deleted_at"] = now_iso()
+        s["deleted_by"] = actor_name
         self.repo.save(self.data)
+        self._audit(actor_name, "delete_story", {"patient_id": s.get("patient_id"), "id": sid, "soft": True})
+
+    def list_recent_stories(
+        self,
+        days:int=90,
+        username:Optional[str]=None,
+        patient_id:Optional[str]=None,
+        deleted:Optional[bool]=False,
+    ):
+        cutoff = datetime.now(timezone.utc).astimezone() - timedelta(days=days)
+        allowed_pids = None
+        if username and self._role(username) not in ("Admin","Auditor"):
+            allowed_pids = set(self.get_assigned_patient_ids(username))
+        res = []
+        for s in self.data.get("stories", []):
+            is_deleted = s.get("deleted", False)
+            if deleted is False and is_deleted:
+                continue
+            if deleted is True and not is_deleted:
+                continue
+            if patient_id and s.get("patient_id") != patient_id: continue
+            if allowed_pids is not None and s["patient_id"] not in allowed_pids: continue
+            ts = datetime.fromisoformat(s["created_at"])
+            if ts >= cutoff:
+                res.append(s)
+        res.sort(key=lambda x: x["created_at"], reverse=True)
+        return res
+
+    def list_history_stories(
+        self,
+        before_days:int=90,
+        username:Optional[str]=None,
+        patient_id:Optional[str]=None,
+        deleted:Optional[bool]=False,
+    ):
+        cutoff = datetime.now(timezone.utc).astimezone() - timedelta(days=before_days)
+        allowed_pids = None
+        if username and self._role(username) not in ("Admin","Auditor"):
+            allowed_pids = set(self.get_assigned_patient_ids(username))
+        res = []
+        for s in self.data.get("stories", []):
+            is_deleted = s.get("deleted", False)
+            if deleted is False and is_deleted:
+                continue
+            if deleted is True and not is_deleted:
+                continue
+            if patient_id and s.get("patient_id") != patient_id: continue
+            if allowed_pids is not None and s["patient_id"] not in allowed_pids: continue
+            ts = datetime.fromisoformat(s["created_at"])
+            if ts < cutoff:
+                res.append(s)
+        res.sort(key=lambda x: x["created_at"], reverse=True)
+        return res
 
     # ---------- preferences ----------
     def upsert_preferences(self, pid:str, diet:Optional[str], gender:Optional[str], visiting_hours:Optional[str], staff_reader:Optional[str]=None, actor:Optional[str]=None):
@@ -364,7 +465,7 @@ class CareLogService:
     def get_handover(self, pid:str):
         return next((x for x in self.data.get("handover_notes", []) if x["patient_id"]==pid), None)
 
-    # ---------- search & report ----------
+    # ---------- search & report (legacy structured search for UI) ----------
     def _within_date(self, ts_iso:str, start:Optional[str], end:Optional[str]) -> bool:
         ts = datetime.fromisoformat(ts_iso)
         if start:
@@ -383,8 +484,10 @@ class CareLogService:
         allowed_pids = None
         role = self._role(username) if username else None
         if username and role not in ("Admin","Auditor"):
+            # Limit to patients assigned to the user while allowing additional record types in searches
             allowed_pids = set(self.get_assigned_patient_ids(username))
-            types = [t for t in types if t in ("observation","story")]
+            allowed_types = {"observation","story","handover","preference","preferences","visit","visits"}
+            types = [t for t in types if t in allowed_types]
 
         def high(text):
             if not kw_low: return text
@@ -448,6 +551,131 @@ class CareLogService:
         out.sort(key=lambda x: (x.get("created_at") or x.get("ts")), reverse=True)
         return out
 
+    # ===== NEW: generic search iterator API (observations/stories/visits/preferences/handover_notes) =====
+    def _parse_ts(self, val: Optional[str]) -> datetime:
+        """Robust ISO parser → timezone-aware datetime; fallback to epoch if missing/invalid."""
+        if not val:
+            return datetime(1970,1,1, tzinfo=timezone.utc)
+        try:
+            dt = datetime.fromisoformat(val)
+            # If naive, assume UTC to keep ordering stable
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt
+        except Exception:
+            return datetime(1970,1,1, tzinfo=timezone.utc)
+
+    def _match(self, rec: dict, keyword: str) -> bool:
+        kw = (keyword or "").strip().lower()
+        if not kw:
+            return True
+        text = (rec.get("text") or "")
+        return kw in text.lower()
+
+    def _iter_records(self, kinds: Tuple[str, ...], start_dt: Optional[datetime], end_dt: Optional[datetime]):
+        """
+        统一把不同 kind 的记录转成标准结构：
+        {type, id, patient_id, ts(datetime), text(str), meta(dict)}
+        """
+        data = self.data  # Use in-memory data; if disk must be authoritative, switch to self.repo.load()
+        for kind in kinds:
+            bucket = data.get(kind, [])
+            if not isinstance(bucket, list):
+                continue
+            for it in bucket:
+                # observations
+                if kind == "observations":
+                    ts = self._parse_ts(it.get("created_at") or it.get("ts"))
+                    if (start_dt and ts < start_dt) or (end_dt and ts > end_dt): continue
+                    txt = " ".join(filter(None, [
+                        f"pain={it.get('pain')}",
+                        f"appetite={it.get('appetite')}",
+                        it.get("note"),
+                        it.get("created_by"),
+                    ]))
+                    yield {"type": "observations", "id": it.get("id"), "patient_id": it.get("patient_id"),
+                           "ts": ts, "text": txt, "meta": it}
+
+                # stories
+                elif kind == "stories":
+                    ts = self._parse_ts(it.get("created_at") or it.get("ts"))
+                    if (start_dt and ts < start_dt) or (end_dt and ts > end_dt): continue
+                    txt = it.get("text") or ""
+                    yield {"type": "stories", "id": it.get("id"), "patient_id": it.get("patient_id"),
+                           "ts": ts, "text": txt, "meta": it}
+
+                # visits
+                elif kind == "visits":
+                    ts = self._parse_ts(it.get("start") or it.get("created_at") or it.get("ts"))
+                    if (start_dt and ts < start_dt) or (end_dt and ts > end_dt): continue
+                    txt = " ".join(filter(None, [
+                        f"start={it.get('start')}",
+                        f"end={it.get('end')}",
+                        it.get("location"),
+                        it.get("doctor"),
+                        it.get("created_by"),
+                    ]))
+                    yield {"type": "visits", "id": it.get("id"), "patient_id": it.get("patient_id"),
+                           "ts": ts, "text": txt, "meta": it}
+
+                # preferences
+                elif kind == "preferences":
+                    ts = self._parse_ts(it.get("updated_at") or it.get("created_at") or it.get("ts"))
+                    if (start_dt and ts < start_dt) or (end_dt and ts > end_dt): continue
+                    txt = " ".join(filter(None, [
+                        f"diet={it.get('diet','')}",
+                        f"gender={it.get('preferred_gender','')}",
+                        f"visiting_hours={it.get('visiting_hours','')}",
+                        it.get("note"),
+                    ]))
+                    yield {"type": "preferences", "id": it.get("id"), "patient_id": it.get("patient_id"),
+                           "ts": ts, "text": txt, "meta": it}
+
+                # handover notes
+                elif kind == "handover_notes":
+                    ts = self._parse_ts(it.get("updated_at") or it.get("created_at") or it.get("ts"))
+                    if (start_dt and ts < start_dt) or (end_dt and ts > end_dt): continue
+                    txt = it.get("text") or ""
+                    yield {"type": "handover", "id": it.get("id"), "patient_id": it.get("patient_id"),
+                           "ts": ts, "text": txt, "meta": it}
+
+    def search_entries(
+        self,
+        keyword: str = "",
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+        types: Optional[Set[str]] = None,
+    ) -> List[dict]:
+        """
+        在 observations/stories/visits/preferences/handover_notes 中按关键词与日期范围搜索。
+        返回统一列表：[{type, id, patient_id, ts, text, meta}, ...]；按 ts 升序。
+        """
+        # Configure the time window (string value accepting YYYY-MM-DD or full ISO)
+        start_dt = None
+        end_dt = None
+        try:
+            if start:
+                start_dt = datetime.fromisoformat(start + "T00:00:00+00:00") if len(start) == 10 else datetime.fromisoformat(start)
+            if end:
+                end_dt = datetime.fromisoformat(end + "T23:59:59+00:00") if len(end) == 10 else datetime.fromisoformat(end)
+        except Exception:
+            # Graceful handling: treat invalid dates as no range restriction
+            start_dt = None
+            end_dt = None
+
+        incoming = set(types or self.SEARCHABLE_TYPES)
+        mapped = set("handover_notes" if k == "handover" else k for k in incoming)
+        tset = mapped & self.SEARCHABLE_TYPES
+        results: List[dict] = []
+        # iterate over each record bucket (handover uses handover_notes)
+        kinds: Tuple[str, ...] = tuple(sorted(tset, key=lambda x: x))
+
+        for rec in self._iter_records(kinds, start_dt, end_dt):
+            if self._match(rec, keyword):
+                results.append(rec)
+
+        return sorted(results, key=lambda r: r["ts"])
+
     def export_csv(self, rows:list[dict]) -> str:
         if not rows: return ""
         f = io.StringIO()
@@ -466,7 +694,6 @@ class CareLogService:
             if dt.year==year and dt.month==month:
                 out.append({"type":"observation", **o})
         for s in self.data.get("stories", []):
-            if s.get("deleted"): continue
             dt = datetime.fromisoformat(s["created_at"])
             if dt.year==year and dt.month==month:
                 out.append({"type":"story", **s})
@@ -483,8 +710,23 @@ class CareLogService:
             lines.append(f"# Report for patient {patient_id}")
             for o in sorted([x for x in self.data.get("observations", []) if x["patient_id"]==patient_id and not x.get("deleted") and (not date_from and not date_to or self._within_date(x["created_at"], date_from, date_to))], key=lambda x: x["created_at"]):
                 lines.append(f'- [{o["created_at"]}] Observation by {o["created_by"]}: pain={o["pain"]} appetite={o["appetite"]} note={o["note"]}')
-            for s in sorted([x for x in self.data.get("stories", []) if x["patient_id"]==patient_id and not x.get("deleted") and (not date_from and not date_to or self._within_date(x["created_at"], date_from, date_to))], key=lambda x: x["created_at"]):
-                lines.append(f'- [{s["created_at"]}] Story by {s["created_by"]}: {s["text"]}')
+            stories = [
+                x for x in self.data.get("stories", [])
+                if x["patient_id"]==patient_id and (not date_from and not date_to or self._within_date(x["created_at"], date_from, date_to))
+            ]
+            for s in sorted(stories, key=lambda x: x["created_at"]):
+                deleted_note = ""
+                if s.get("deleted"):
+                    deleted_at = s.get("deleted_at")
+                    deleted_by = s.get("deleted_by")
+                    meta_bits = []
+                    if deleted_at:
+                        meta_bits.append(f"at {deleted_at}")
+                    if deleted_by:
+                        meta_bits.append(f"by {deleted_by}")
+                    info = " ".join(meta_bits)
+                    deleted_note = f" [DELETED{(' ' + info) if info else ''}]"
+                lines.append(f'- [{s["created_at"]}] Story by {s.get("created_by","Unknown")}{deleted_note}: {s.get("text","")}')
         elif date_iso:
             dt = datetime.fromisoformat(date_iso)
             y,m,d = dt.year, dt.month, dt.day
@@ -495,10 +737,20 @@ class CareLogService:
                 if ts.date() == dt.date():
                     lines.append(f'- [Patient {o["patient_id"]}] Observation by {o["created_by"]}: pain={o["pain"]} appetite={o["appetite"]} note={o["note"]}')
             for s in self.data.get("stories", []):
-                if s.get("deleted"): continue
                 ts = datetime.fromisoformat(s["created_at"])
                 if ts.date() == dt.date():
-                    lines.append(f'- [Patient {s["patient_id"]}] Story by {s["created_by"]}: {s["text"]}')
+                    deleted_note = ""
+                    if s.get("deleted"):
+                        deleted_at = s.get("deleted_at")
+                        deleted_by = s.get("deleted_by")
+                        meta_bits = []
+                        if deleted_at:
+                            meta_bits.append(f"at {deleted_at}")
+                        if deleted_by:
+                            meta_bits.append(f"by {deleted_by}")
+                        info = " ".join(meta_bits)
+                        deleted_note = f" [DELETED{(' ' + info) if info else ''}]"
+                    lines.append(f'- [Patient {s.get("patient_id","N/A")}] Story by {s.get("created_by","Unknown")}{deleted_note}: {s.get("text","")}')
         return "\n".join(lines)
 
     # ---------- backups ----------
@@ -520,3 +772,102 @@ class CareLogService:
 
     def checksum(self) -> str:
         return self.repo.checksum()
+
+    def global_search(self, kw: str, include_deleted: bool = False, limit: int = 1000):
+        """
+        在整个数据仓库里做大小写不敏感的“包含式”搜索；忽略下方筛选，直接返回所有可能命中。
+        返回统一结构的 rows: List[dict]
+        """
+        if not kw:
+            return []
+
+        kw_l = str(kw).strip().lower()
+        data = self.data  # Current in-memory data; prefer self.repo.load() if disk should be authoritative
+
+        rows = []
+
+        def norm(x):
+            try:
+                return str(x).lower()
+            except Exception:
+                return ""
+
+        def record_contains(obj):
+            """递归判断任意值里是否包含 kw_l"""
+            found = False
+            def walk(o):
+                nonlocal found
+                if found:
+                    return
+                if isinstance(o, dict):
+                    # Filter out soft-deleted entries
+                    if not include_deleted and o.get("deleted") is True:
+                        return
+                    for k, v in o.items():
+                        if kw_l in norm(k):  # Allow hits in key names (for example, patient_id)
+                            found = True; return
+                        if isinstance(v, (str, int, float)):
+                            if kw_l in norm(v):
+                                found = True; return
+                        else:
+                            walk(v)
+                elif isinstance(o, list):
+                    for item in o:
+                        walk(item)
+                else:
+                    if isinstance(o, (str, int, float)) and kw_l in norm(o):
+                        found = True
+            walk(obj)
+            return found
+
+        def first_snippet(rec):
+            """抓取首个命中的字段，做展示摘要"""
+            for k, v in rec.items():
+                if isinstance(v, (str, int, float)) and kw_l in norm(v):
+                    return f"{k}={v}"
+            # Recurse one additional level
+            for k, v in rec.items():
+                if isinstance(v, dict):
+                    for kk, vv in v.items():
+                        if isinstance(vv, (str, int, float)) and kw_l in norm(vv):
+                            return f"{k}.{kk}={vv}"
+            return ""
+
+        # Keys are derived from the project data model; skip any missing ones without raising errors
+        buckets = [
+            ("patient",       data.get("patients", [])),
+            ("visit",         data.get("visits", [])),
+            ("observation",   data.get("observations", [])),
+            ("story",         data.get("stories", [])),
+            ("handover",      data.get("handover_notes", [])),
+            ("audit",         data.get("audit", [])),
+            ("log",           data.get("logs", [])),
+        ]
+
+        for typ, items in buckets:
+            if not isinstance(items, list):
+                continue
+            for idx, rec in enumerate(items):
+                if not isinstance(rec, dict):
+                    continue
+                if not include_deleted and rec.get("deleted") is True:
+                    continue
+                if record_contains(rec):
+                    # Extract shared fields when possible to support list rendering
+                    row = {
+                        "type": typ,
+                        "patient_id": rec.get("patient_id") or rec.get("pid") or rec.get("patientId") or "",
+                        "visit_id": rec.get("visit_id") or rec.get("vid") or "",
+                        "author": rec.get("username") or rec.get("creator") or rec.get("author") or "",
+                        "time": rec.get("timestamp") or rec.get("created_at") or rec.get("time") or rec.get("date") or rec.get("start") or "",
+                        "id": rec.get("id") or "",
+                        "snippet": first_snippet(rec),
+                        "_path": f"{typ}[{idx}]",
+                    }
+                    rows.append(row)
+                    if len(rows) >= limit:
+                        return rows
+        return rows
+
+
+

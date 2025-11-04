@@ -1,0 +1,423 @@
+{
+  "users": [
+    {
+      "username": "patient1",
+      "salt": "db38c74f6e2940189e04c7f22417c81d",
+      "hash": "de28d64035c79418268529724ae4529df687379883b0744e59c9380c3a1e561f",
+      "role": "Patient",
+      "disabled": false
+    },
+    {
+      "username": "patient2",
+      "salt": "d39635b691294d9aa735cb91435c0f9b",
+      "hash": "f39599c088ee930f4fee2e8fbe13ba23bd47402f970ede69230ea90480d92519",
+      "role": "Patient",
+      "disabled": false
+    },
+    {
+      "username": "patient3",
+      "salt": "24623fba46ee410a891e55ba8938403f",
+      "hash": "9591f735e563f8f67726364289e8172ed2f4378f6730159d1f42fb5247a30e64",
+      "role": "Patient",
+      "disabled": false,
+      "failed_attempts": 0,
+      "locked_until": null
+    },
+    {
+      "username": "nurse1",
+      "salt": "79eb74d9140e4f8c84de4186b34bc460",
+      "hash": "a66ee6758d040856e66098fac1dd027d34cdfb28707a4b1b9eba1467b00b5b53",
+      "role": "Nurse",
+      "disabled": false,
+      "failed_attempts": 0,
+      "locked_until": null
+    },
+    {
+      "username": "auditor",
+      "salt": "0aa2281dfa31471f9b9bbabd00cad0f4",
+      "hash": "3e99004fc851821e66156f0043b2664ec06af4a55d612211227cc6ae02e7737d",
+      "role": "Auditor",
+      "disabled": false,
+      "failed_attempts": 0,
+      "locked_until": null
+    },
+    {
+      "username": "ad1",
+      "salt": "d05631d4a461478da89c91dd4b0ed21a",
+      "hash": "1cca950dd7b2be4adeb76f9c4bd9df9a822795f7f88b3d66ffa80ccbfd6513d4",
+      "role": "Admin",
+      "disabled": false
+    }
+  ],
+  "patients": [
+    {
+      "id": "P1",
+      "name": "patient1",
+      "dob": "",
+      "tags": [
+        "self"
+      ],
+      "created_at": "2025-11-04T09:38:46+08:00",
+      "updated_at": "2025-11-04T09:38:46+08:00",
+      "deleted": false
+    },
+    {
+      "id": "P2",
+      "name": "patient2",
+      "dob": "",
+      "tags": [
+        "self"
+      ],
+      "created_at": "2025-11-04T09:40:11+08:00",
+      "updated_at": "2025-11-04T09:40:11+08:00",
+      "deleted": false
+    },
+    {
+      "id": "P3",
+      "name": "patient3",
+      "dob": "",
+      "tags": [
+        "self"
+      ],
+      "created_at": "2025-11-04T09:40:42+08:00",
+      "updated_at": "2025-11-04T09:40:42+08:00",
+      "deleted": false
+    }
+  ],
+  "visits": [
+    {
+      "id": "V1",
+      "patient_id": "P1",
+      "start": "2025-11-04T09:42:26+08:00",
+      "end": null,
+      "created_by": "nurse1",
+      "created_at": "2025-11-04T09:42:26+08:00"
+    },
+    {
+      "id": "V2",
+      "patient_id": "P1",
+      "start": "2025-11-04T09:42:42+08:00",
+      "end": null,
+      "created_by": "nurse1",
+      "created_at": "2025-11-04T09:42:42+08:00"
+    },
+    {
+      "id": "V3",
+      "patient_id": "P1",
+      "start": "2025-11-04T09:51:45+08:00",
+      "end": null,
+      "created_by": "ad1",
+      "created_at": "2025-11-04T09:51:45+08:00"
+    }
+  ],
+  "observations": [
+    {
+      "id": "O1",
+      "patient_id": "P1",
+      "visit_id": "V1",
+      "pain": 3,
+      "appetite": "Average",
+      "note": "going to die",
+      "created_by": "nurse1",
+      "created_at": "2025-11-04T09:42:26+08:00",
+      "deleted": false
+    },
+    {
+      "id": "O2",
+      "patient_id": "P1",
+      "visit_id": "V3",
+      "pain": 8,
+      "appetite": "Poor",
+      "note": "better",
+      "created_by": "ad1",
+      "created_at": "2025-11-04T09:51:45+08:00",
+      "deleted": false
+    }
+  ],
+  "stories": [
+    {
+      "id": "S1",
+      "patient_id": "P1",
+      "visit_id": "V2",
+      "text": "be careful",
+      "created_by": "nurse1",
+      "created_at": "2025-11-04T09:42:42+08:00",
+      "deleted": false
+    }
+  ],
+  "handover_notes": [
+    {
+      "id": "H1",
+      "patient_id": "P1",
+      "text": "must be careful",
+      "created_by": "nurse1",
+      "created_at": "2025-11-04T09:43:04+08:00",
+      "updated_at": "2025-11-04T09:43:07+08:00"
+    }
+  ],
+  "preferences": [
+    {
+      "patient_id": "P1",
+      "diet": "no meat",
+      "preferred_gender": "male",
+      "visiting_hours": "1:00 am",
+      "viewed_by": [
+        "patient1"
+      ],
+      "created_by": "patient1",
+      "created_at": "2025-11-04T09:39:18+08:00",
+      "updated_at": "2025-11-04T09:39:18+08:00",
+      "updated_by": "patient1"
+    },
+    {
+      "patient_id": "P2",
+      "diet": "no water",
+      "preferred_gender": "male",
+      "visiting_hours": "2:00 am",
+      "viewed_by": [
+        "patient2"
+      ],
+      "created_by": "patient2",
+      "created_at": "2025-11-04T09:40:31+08:00",
+      "updated_at": "2025-11-04T09:40:31+08:00",
+      "updated_by": "patient2"
+    },
+    {
+      "patient_id": "P3",
+      "diet": "no food",
+      "preferred_gender": "female",
+      "visiting_hours": "8:00 am",
+      "viewed_by": [
+        "patient3"
+      ],
+      "created_by": "patient3",
+      "created_at": "2025-11-04T09:40:54+08:00",
+      "updated_at": "2025-11-04T09:41:05+08:00",
+      "updated_by": "patient3"
+    }
+  ],
+  "assignments": [
+    {
+      "patient_id": "P1",
+      "username": "patient1"
+    },
+    {
+      "patient_id": "P2",
+      "username": "patient2"
+    },
+    {
+      "patient_id": "P3",
+      "username": "patient3"
+    },
+    {
+      "patient_id": "P1",
+      "username": "nurse1"
+    },
+    {
+      "patient_id": "P2",
+      "username": "nurse1"
+    },
+    {
+      "patient_id": "P1",
+      "username": "ad1"
+    },
+    {
+      "patient_id": "P2",
+      "username": "ad1"
+    }
+  ],
+  "audit": [
+    {
+      "id": "A1",
+      "ts": "2025-11-04T09:38:46+08:00",
+      "actor": "self-register",
+      "action": "create_user",
+      "meta": {
+        "username": "patient1",
+        "role": "Patient"
+      }
+    },
+    {
+      "id": "A2",
+      "ts": "2025-11-04T09:38:46+08:00",
+      "actor": "patient1",
+      "action": "assign_self",
+      "meta": {
+        "patient_id": "P1"
+      }
+    },
+    {
+      "id": "A3",
+      "ts": "2025-11-04T09:40:11+08:00",
+      "actor": "self-register",
+      "action": "create_user",
+      "meta": {
+        "username": "patient2",
+        "role": "Patient"
+      }
+    },
+    {
+      "id": "A4",
+      "ts": "2025-11-04T09:40:11+08:00",
+      "actor": "patient2",
+      "action": "assign_self",
+      "meta": {
+        "patient_id": "P2"
+      }
+    },
+    {
+      "id": "A5",
+      "ts": "2025-11-04T09:40:42+08:00",
+      "actor": "self-register",
+      "action": "create_user",
+      "meta": {
+        "username": "patient3",
+        "role": "Patient"
+      }
+    },
+    {
+      "id": "A6",
+      "ts": "2025-11-04T09:40:42+08:00",
+      "actor": "patient3",
+      "action": "assign_self",
+      "meta": {
+        "patient_id": "P3"
+      }
+    },
+    {
+      "id": "A7",
+      "ts": "2025-11-04T09:41:34+08:00",
+      "actor": "patient3",
+      "action": "login",
+      "meta": {}
+    },
+    {
+      "id": "A8",
+      "ts": "2025-11-04T09:41:51+08:00",
+      "actor": "self-register",
+      "action": "create_user",
+      "meta": {
+        "username": "nurse1",
+        "role": "Nurse"
+      }
+    },
+    {
+      "id": "A9",
+      "ts": "2025-11-04T09:42:04+08:00",
+      "actor": "nurse1",
+      "action": "assign_self",
+      "meta": {
+        "patient_id": "P1"
+      }
+    },
+    {
+      "id": "A10",
+      "ts": "2025-11-04T09:42:10+08:00",
+      "actor": "nurse1",
+      "action": "assign_self",
+      "meta": {
+        "patient_id": "P2"
+      }
+    },
+    {
+      "id": "A11",
+      "ts": "2025-11-04T09:42:26+08:00",
+      "actor": "nurse1",
+      "action": "add_observation",
+      "meta": {
+        "patient_id": "P1",
+        "id": "O1"
+      }
+    },
+    {
+      "id": "A12",
+      "ts": "2025-11-04T09:42:42+08:00",
+      "actor": "nurse1",
+      "action": "add_story",
+      "meta": {
+        "patient_id": "P1",
+        "id": "S1"
+      }
+    },
+    {
+      "id": "A13",
+      "ts": "2025-11-04T09:43:04+08:00",
+      "actor": "nurse1",
+      "action": "create_handover",
+      "meta": {
+        "patient_id": "P1",
+        "id": "H1"
+      }
+    },
+    {
+      "id": "A14",
+      "ts": "2025-11-04T09:43:07+08:00",
+      "actor": "nurse1",
+      "action": "update_handover",
+      "meta": {
+        "patient_id": "P1",
+        "id": "H1"
+      }
+    },
+    {
+      "id": "A15",
+      "ts": "2025-11-04T09:47:11+08:00",
+      "actor": "nurse1",
+      "action": "login",
+      "meta": {}
+    },
+    {
+      "id": "A16",
+      "ts": "2025-11-04T09:48:11+08:00",
+      "actor": "self-register",
+      "action": "create_user",
+      "meta": {
+        "username": "auditor",
+        "role": "Auditor"
+      }
+    },
+    {
+      "id": "A17",
+      "ts": "2025-11-04T09:49:51+08:00",
+      "actor": "auditor",
+      "action": "login",
+      "meta": {}
+    },
+    {
+      "id": "A18",
+      "ts": "2025-11-04T09:51:20+08:00",
+      "actor": "self-register",
+      "action": "create_user",
+      "meta": {
+        "username": "ad1",
+        "role": "Admin"
+      }
+    },
+    {
+      "id": "A19",
+      "ts": "2025-11-04T09:51:34+08:00",
+      "actor": "ad1",
+      "action": "assign_self",
+      "meta": {
+        "patient_id": "P1"
+      }
+    },
+    {
+      "id": "A20",
+      "ts": "2025-11-04T09:51:36+08:00",
+      "actor": "ad1",
+      "action": "assign_self",
+      "meta": {
+        "patient_id": "P2"
+      }
+    }
+  ],
+  "next_ids": {
+    "patient": 4,
+    "visit": 4,
+    "observation": 3,
+    "story": 2,
+    "handover": 2,
+    "audit": 21
+  }
+}
